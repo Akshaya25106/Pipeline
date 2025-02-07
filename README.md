@@ -8,3 +8,4 @@
 Description- This 4-stage pipelined processor in Verilog implements basic arithmetic operations (ADD, SUB, ADDI) using instruction fetch, decode, execute, and write-back stages. The processor fetches instructions from memory, decodes them to determine the operation and operands, executes the operation in the ALU, and writes the result back to the appropriate register. The accompanying testbench initializes memory with test instructions and simulates the execution, displaying the final register values. 
 
 # output
+![Image](https://github.com/user-attachments/assets/530ce493-05fb-41df-8ae2-fa3b0f8b9d33)
