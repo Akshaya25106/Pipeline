@@ -1,0 +1,79 @@
+module PipelineProcessor (
+    input clk, reset,
+    output reg [31:0] PC
+);
+    // Pipeline registers
+    reg [31:0] F_D, D_E, E_W;
+    reg [31:0] instruction, reg1, reg2, result;
+    reg [31:0] memory [0:255];
+    reg [31:0] registers [0:15];
+
+    // Fetch stage
+    always @(posedge clk) begin
+        if (reset) PC <= 0;
+        else begin
+            instruction <= memory[PC];
+            F_D <= instruction;
+            PC <= PC + 1;
+        end
+    end
+
+    // Decode stage
+    always @(posedge clk) begin
+        reg1 <= registers[F_D[19:16]]; 
+        reg2 <= registers[F_D[15:12]]; 
+        D_E <= F_D;
+    end
+
+    // Execute stage
+    always @(posedge clk) begin
+        case (D_E[31:28])
+            4'b0001: result <= reg1 + reg2; // ADD
+            4'b0010: result <= reg1 - reg2; // SUB
+            4'b0011: result <= reg1 + D_E[11:0]; // ADDI
+        endcase
+        E_W <= result;
+    end
+
+    // Corrected Write Back (WB) Stage
+    always @(posedge clk) begin
+        registers[D_E[27:24]] <= result; // Corrected register destination
+    end
+endmodule
+
+`timescale 1ns / 1ps
+
+module PipelineProcessor_TB;
+
+    reg clk;
+    reg reset;
+    wire [31:0] PC;
+
+    PipelineProcessor uut (
+        .clk(clk),
+        .reset(reset),
+        .PC(PC)
+    );
+
+    initial begin
+        clk = 0;
+        forever #5 clk =~clk; 
+    end
+
+    initial begin
+        reset = 1;
+        #10; 
+        reset = 0;
+        uut.memory[0] = 32'h0001_2321; // ADD R3, R2 -> R3 = R2 + R3
+        uut.memory[1] = 32'h0002_4121; // SUB R4, R1 -> R4 = R1 - R2
+        uut.memory[2] = 32'h0003_5811; // ADDI R5, R8, 0x011 -> R5 = R8 + 0x011
+        uut.registers[2] = 32'h0000_0005; // R2 = 5
+        uut.registers[3] = 32'h0000_0003; // R3 = 3
+        #50;
+        $display("R3 = %h", uut.registers[3]); 
+        $display("R4 = %h", uut.registers[4]); 
+        $display("R5 = %h", uut.registers[5]); 
+        $finish;
+    end
+
+endmodule
